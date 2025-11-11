@@ -89,8 +89,8 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   const displayedContent =
     shouldTruncate && !isExpanded
       ? contentStr.length > 500
-        ? contentStr.slice(0, 500) + "..."
-        : contentLines.slice(0, 4).join("\n") + "\n..."
+        ? contentStr.slice(0, 500) + "…"
+        : contentLines.slice(0, 4).join("\n") + "\n…"
       : contentStr;
 
   return (
@@ -100,13 +100,13 @@ export function ToolResult({ message }: { message: ToolMessage }) {
           <div className="flex flex-wrap items-center justify-between gap-2">
             {message.name ? (
               <h3 className="font-medium text-gray-900">
-                Tool Result:{" "}
+                办理工具结果：
                 <code className="rounded bg-gray-100 px-2 py-1">
                   {message.name}
                 </code>
               </h3>
             ) : (
-              <h3 className="font-medium text-gray-900">Tool Result</h3>
+              <h3 className="font-medium text-gray-900">办理工具结果</h3>
             )}
             {message.tool_call_id && (
               <code className="ml-2 rounded bg-gray-100 px-2 py-1 text-sm">

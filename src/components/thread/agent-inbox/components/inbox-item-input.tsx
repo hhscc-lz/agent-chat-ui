@@ -17,7 +17,7 @@ function ResetButton({ handleReset }: { handleReset: () => void }) {
       className="flex items-center justify-center gap-2 text-gray-500 hover:text-red-500"
     >
       <Undo2 className="h-4 w-4" />
-      <span>Reset</span>
+      <span>重置</span>
     </Button>
   );
 }
@@ -109,9 +109,7 @@ function ResponseComponent({
   return (
     <div className="flex w-full flex-col items-start gap-4 rounded-xl border-[1px] border-gray-300 p-6">
       <div className="flex w-full items-center justify-between">
-        <p className="text-base font-semibold text-black">
-          Respond to assistant
-        </p>
+        <p className="text-base font-semibold text-black">回复处理人员</p>
         <ResetButton
           handleReset={() => {
             onResponseChange("", res);
@@ -124,14 +122,14 @@ function ResponseComponent({
       )}
 
       <div className="flex w-full flex-col items-start gap-[6px]">
-        <p className="min-w-fit text-sm font-medium">Response</p>
+        <p className="min-w-fit text-sm font-medium">回复内容</p>
         <Textarea
           disabled={streaming}
           value={res.args}
           onChange={(e) => onResponseChange(e.target.value, res)}
           onKeyDown={handleKeyDown}
           rows={4}
-          placeholder="Your response here..."
+          placeholder="请填写拟回复内容或补充说明……"
         />
       </div>
 
@@ -141,7 +139,7 @@ function ResponseComponent({
           disabled={streaming}
           onClick={handleSubmit}
         >
-          Send Response
+          发送回复
         </Button>
       </div>
     </div>
@@ -171,7 +169,7 @@ function AcceptComponent({
         onClick={handleSubmit}
         className="w-full"
       >
-        Accept
+        确认提交
       </Button>
     </div>
   );
@@ -217,10 +215,10 @@ function EditAndOrAcceptComponent({
     }
     return null;
   }
-  const header = editResponse.acceptAllowed ? "Edit/Accept" : "Edit";
-  let buttonText = "Submit";
+  const header = editResponse.acceptAllowed ? "核对/修改受理信息" : "修改受理信息";
+  let buttonText = "提交修改";
   if (editResponse.acceptAllowed && !editResponse.editsMade) {
-    buttonText = "Accept";
+    buttonText = "确认无调整";
   }
 
   const handleReset = () => {
@@ -348,8 +346,8 @@ export function InboxItemInput({
       (Array.isArray(change) && !Array.isArray(key)) ||
       (!Array.isArray(change) && Array.isArray(key))
     ) {
-      toast.error("Error", {
-        description: "Something went wrong",
+      toast.error("修改失败", {
+        description: "参数格式不匹配，请重试。",
         richColors: true,
         closeButton: true,
       });
@@ -508,7 +506,7 @@ export function InboxItemInput({
         {supportsMultipleMethods ? (
           <div className="mx-auto mt-3 flex items-center gap-3">
             <Separator className="w-[full]" />
-            <p className="text-sm text-gray-500">Or</p>
+            <p className="text-sm text-gray-500">或</p>
             <Separator className="w-full" />
           </div>
         ) : null}
@@ -520,10 +518,10 @@ export function InboxItemInput({
           onResponseChange={onResponseChange}
           handleSubmit={handleSubmit}
         />
-        {streaming && <p className="text-sm text-gray-600">Running...</p>}
+        {streaming && <p className="text-sm text-gray-600">后台处理中…</p>}
         {streamFinished && (
           <p className="text-base font-medium text-green-600">
-            Successfully finished Graph invocation.
+            已完成本次诉求处理。
           </p>
         )}
       </div>

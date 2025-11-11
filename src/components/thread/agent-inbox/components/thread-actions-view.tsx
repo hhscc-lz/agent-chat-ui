@@ -37,7 +37,7 @@ function ButtonGroup({
         size="sm"
         onClick={handleShowState}
       >
-        State
+        查看状态
       </Button>
       <Button
         variant="outline"
@@ -48,7 +48,7 @@ function ButtonGroup({
         size="sm"
         onClick={handleShowDescription}
       >
-        Description
+        查看说明
       </Button>
     </div>
   );
@@ -85,8 +85,8 @@ export function ThreadActionsView({
 
   const handleOpenInStudio = () => {
     if (!apiUrl) {
-      toast.error("Error", {
-        description: "Please set the LangGraph deployment URL in settings.",
+      toast.error("无法打开后台", {
+        description: "请先在设置中配置受理服务地址。",
         duration: 5000,
         richColors: true,
         closeButton: true,
@@ -98,7 +98,7 @@ export function ThreadActionsView({
     window.open(studioUrl, "_blank");
   };
 
-  const threadTitle = interrupt.action_request.action || "Unknown";
+  const threadTitle = interrupt.action_request.action || "诉求事项";
   const actionsDisabled = loading || streaming;
   const ignoreAllowed = interrupt.config.allow_ignore;
 
@@ -118,7 +118,7 @@ export function ThreadActionsView({
               className="flex items-center gap-1 bg-white"
               onClick={handleOpenInStudio}
             >
-              Studio
+              查看后台
             </Button>
           )}
           <ButtonGroup
@@ -137,7 +137,7 @@ export function ThreadActionsView({
           onClick={handleResolve}
           disabled={actionsDisabled}
         >
-          Mark as Resolved
+          标记办结
         </Button>
         {ignoreAllowed && (
           <Button
@@ -146,7 +146,7 @@ export function ThreadActionsView({
             onClick={handleIgnore}
             disabled={actionsDisabled}
           >
-            Ignore
+            忽略
           </Button>
         )}
       </div>

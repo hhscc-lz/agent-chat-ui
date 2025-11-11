@@ -17,12 +17,10 @@ import {
 import { useQueryState } from "nuqs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { LangGraphLogoSVG } from "@/components/icons/langgraph";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
-import { useThreads } from "./Thread";
 import { toast } from "sonner";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
@@ -41,10 +39,6 @@ const useTypedStream = useStream<
 
 type StreamContextType = ReturnType<typeof useTypedStream>;
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
-
-async function sleep(ms = 4000) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function checkGraphStatus(
   apiUrl: string,
@@ -78,7 +72,6 @@ const StreamSession = ({
   assistantId: string;
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
-  const { getThreads, setThreads } = useThreads();
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
@@ -95,20 +88,16 @@ const StreamSession = ({
     },
     onThreadId: (id) => {
       setThreadId(id);
-      // Refetch threads list when thread ID changes.
-      // Wait for some seconds before fetching so we're able to get the new thread that was created.
-      sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
 
   useEffect(() => {
     checkGraphStatus(apiUrl, apiKey).then((ok) => {
       if (!ok) {
-        toast.error("Failed to connect to LangGraph server", {
+        toast.error("无法连接至政务热线服务后台", {
           description: () => (
             <p>
-              Please ensure your graph is running at <code>{apiUrl}</code> and
-              your API key is correctly set (if connecting to a deployed graph).
+              请确认服务已在 <code>{apiUrl}</code> 正常运行，并检查认证信息是否配置正确。
             </p>
           ),
           duration: 10000,
@@ -168,14 +157,15 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
         <div className="animate-in fade-in-0 zoom-in-95 bg-background flex max-w-3xl flex-col rounded-lg border shadow-lg">
           <div className="mt-14 flex flex-col gap-2 border-b p-6">
             <div className="flex flex-col items-start gap-2">
-              <LangGraphLogoSVG className="h-7" />
+              <span className="text-base font-semibold text-sky-700">
+                辽宁省12345政务服务热线
+              </span>
               <h1 className="text-xl font-semibold tracking-tight">
-                Agent Chat
+                自定义接入配置
               </h1>
             </div>
             <p className="text-muted-foreground">
-              Welcome to Agent Chat! Before you get started, you need to enter
-              the URL of the deployment and the assistant / graph ID.
+              如需连接到不同的政务受理后台，请填写对应服务地址与受理助手 ID（测试使用可保留默认值）。
             </p>
           </div>
           <form
@@ -198,11 +188,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="apiUrl">
-                Deployment URL<span className="text-rose-500">*</span>
+                服务接口地址<span className="text-rose-500">*</span>
               </Label>
               <p className="text-muted-foreground text-sm">
-                This is the URL of your LangGraph deployment. Can be a local, or
-                production deployment.
+                指向政务热线受理服务的 API 地址，可为本地或生产环境。
               </p>
               <Input
                 id="apiUrl"
@@ -215,12 +204,10 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="assistantId">
-                Assistant / Graph ID<span className="text-rose-500">*</span>
+                受理助手/流程 ID<span className="text-rose-500">*</span>
               </Label>
               <p className="text-muted-foreground text-sm">
-                This is the ID of the graph (can be the graph name), or
-                assistant to fetch threads from, and invoke when actions are
-                taken.
+                指定在后台用于创建工单和拉取进度的流程标识。
               </p>
               <Input
                 id="assistantId"
@@ -234,10 +221,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
             <div className="flex flex-col gap-2">
               <Label htmlFor="apiKey">LangSmith API Key</Label>
               <p className="text-muted-foreground text-sm">
-                This is <strong>NOT</strong> required if using a local LangGraph
-                server. This value is stored in your browser's local storage and
-                is only used to authenticate requests sent to your LangGraph
-                server.
+                若后台需要鉴权，可在此填写密钥；本地调试可留空。该信息仅保存在浏览器本地存储。
               </p>
               <PasswordInput
                 id="apiKey"
@@ -253,7 +237,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
                 type="submit"
                 size="lg"
               >
-                Continue
+                保存并进入
                 <ArrowRight className="size-5" />
               </Button>
             </div>

@@ -102,8 +102,8 @@ export default function useInterruptedActions({
   ) => {
     e.preventDefault();
     if (!humanResponse) {
-      toast.error("Error", {
-        description: "Please enter a response.",
+      toast.error("提交失败", {
+        description: "请先填写需要提交的内容。",
         duration: 5000,
         richColors: true,
         closeButton: true,
@@ -151,8 +151,8 @@ export default function useInterruptedActions({
           (r) => r.type === selectedSubmitType,
         );
         if (!input) {
-          toast.error("Error", {
-            description: "No response found.",
+          toast.error("提交失败", {
+            description: "未找到可提交的内容，请确认填写后再试。",
             richColors: true,
             closeButton: true,
             duration: 5000,
@@ -169,8 +169,8 @@ export default function useInterruptedActions({
           return;
         }
 
-        toast("Success", {
-          description: "Response submitted successfully.",
+        toast("提交成功", {
+          description: "已将内容发送至后台处理，请关注反馈。",
           duration: 5000,
         });
 
@@ -181,16 +181,16 @@ export default function useInterruptedActions({
         console.error("Error sending human response", e);
 
         if ("message" in e && e.message.includes("Invalid assistant ID")) {
-          toast("Error: Invalid assistant ID", {
+          toast("助手配置错误", {
             description:
-              "The provided assistant ID was not found in this graph. Please update the assistant ID in the settings and try again.",
+              "未找到对应的受理流程，请在设置中更新助手 ID 后重试。",
             richColors: true,
             closeButton: true,
             duration: 5000,
           });
         } else {
-          toast.error("Error", {
-            description: "Failed to submit response.",
+          toast.error("提交失败", {
+            description: "发送至后台时出现问题，请稍后重试。",
             richColors: true,
             closeButton: true,
             duration: 5000,
@@ -206,15 +206,15 @@ export default function useInterruptedActions({
         setStreaming(false);
         setStreamFinished(false);
       }
-    } else {
-      setLoading(true);
-      resumeRun(humanResponse);
+  } else {
+    setLoading(true);
+    resumeRun(humanResponse);
 
-      toast("Success", {
-        description: "Response submitted successfully.",
-        duration: 5000,
-      });
-    }
+    toast("提交成功", {
+      description: "已将内容发送至后台处理，请关注反馈。",
+      duration: 5000,
+    });
+  }
 
     setLoading(false);
   };
@@ -226,8 +226,8 @@ export default function useInterruptedActions({
 
     const ignoreResponse = humanResponse.find((r) => r.type === "ignore");
     if (!ignoreResponse) {
-      toast.error("Error", {
-        description: "The selected thread does not support ignoring.",
+      toast.error("无法忽略", {
+        description: "当前诉求不支持忽略操作，请选择其他处理方式。",
         duration: 5000,
       });
       return;
@@ -239,9 +239,7 @@ export default function useInterruptedActions({
     resumeRun([ignoreResponse]);
 
     setLoading(false);
-    toast("Successfully ignored thread", {
-      duration: 5000,
-    });
+    toast("已忽略该诉求", { duration: 5000 });
   };
 
   const handleResolve = async (
@@ -262,14 +260,14 @@ export default function useInterruptedActions({
         },
       );
 
-      toast("Success", {
-        description: "Marked thread as resolved.",
+      toast("处理完成", {
+        description: "已将诉求标记为办结。",
         duration: 3000,
       });
     } catch (e) {
       console.error("Error marking thread as resolved", e);
-      toast.error("Error", {
-        description: "Failed to mark thread as resolved.",
+      toast.error("操作失败", {
+        description: "办结操作未成功，请稍后重试。",
         richColors: true,
         closeButton: true,
         duration: 3000,

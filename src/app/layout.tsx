@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Chat",
-  description: "Agent Chat UX by LangChain",
+  title: "辽宁省12345政务服务热线",
+  description: "辽宁省12345政务服务热线——市民诉求与投诉受理平台",
 };
 
 export default function RootLayout({

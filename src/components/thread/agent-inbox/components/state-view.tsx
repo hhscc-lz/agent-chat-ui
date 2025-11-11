@@ -29,13 +29,13 @@ const messageTypeToLabel = (message: BaseMessage) => {
 
   switch (type) {
     case "human":
-      return "User";
+      return "诉求人";
     case "ai":
-      return "Assistant";
+      return "智能助手";
     case "tool":
-      return "Tool";
+      return "办理工具";
     case "System":
-      return "System";
+      return "系统";
     default:
       return "";
   }
@@ -89,7 +89,9 @@ function StateViewRecursive(props: StateViewRecursiveProps) {
   }
 
   if (props.value == null) {
-    return <p className="font-light whitespace-pre-wrap text-gray-600">null</p>;
+    return (
+      <p className="font-light whitespace-pre-wrap text-gray-600">无</p>
+    );
   }
 
   if (Array.isArray(props.value)) {
@@ -243,7 +245,7 @@ export function StateView({
   const [expanded, setExpanded] = useState(false);
 
   if (!values) {
-    return <div>No state found</div>;
+    return <div>暂无状态数据</div>;
   }
 
   return (
@@ -257,7 +259,7 @@ export function StateView({
       {view === "description" && (
         <div className="pt-6 pb-2">
           <MarkdownText>
-            {description ?? "No description provided"}
+            {description ?? "暂无说明信息"}
           </MarkdownText>
         </div>
       )}

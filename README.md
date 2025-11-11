@@ -5,6 +5,18 @@ Agent Chat UI is a Next.js application which enables chatting with any LangGraph
 > [!NOTE]
 > 🎥 Watch the video setup guide [here](https://youtu.be/lInrwVnZ83o).
 
+## 与辽宁省 12345 文本客服智能体联动
+
+配套的 LangGraph 后端位于 `src/complaint_agent/`，入口函数为 `create_citizen_service_agent()`，主要模块如下：
+
+- **状态与模型**：`schema.py` 定义 `ComplaintAgentState`、`AgentResponse`、`ComplaintSlots` 等结构，`agent.py` 负责装配模型、提示词、工具与中间件，并默认开启 `interrupt_before=["tools"]` 方便前端在工具执行前中断。
+- **提示词**：`prompts.py` 全面描述 12345 客服流程（意图识别、槽位收集、定位、附件、建单、查询、满意度回访等），强调简洁礼貌与隐私安全。
+- **中间件**：`ComplaintPlannerMiddleware` 在 `middleware.py` 中维护槽位快照、缺失项与确认状态，将模型输出同步到 `ComplaintAgentState`，为后续扩展提供挂钩。
+- **工具集合**：`tools.py` 提供 `CitizenKnowledgeSearchTool`、`SlotValidatorTool`、`AssignDepartmentTool`、`ConfirmLocationTool`、`UploadEvidenceTool`、`CreateTicketTool`、`TicketStatusTool`、`TicketSearchTool`、`SatisfactionSurveyTool` 等占位实现，替换 TODO 即可接入真实接口。
+- **快速体验**：`demo.py` 支持 `python3 -m complaint_agent.demo --model openai:gpt-4o-mini` 体验多轮对话，用于调试提示词与工具调用。
+
+前端默认展示辽宁省 12345 热线品牌视觉，提交诉求、上传佐证、隐藏办理日志等交互都已就绪。后续接入真实服务时，只需在工具内补齐 HTTP/RPC 调用实现。
+
 ## Setup
 
 > [!TIP]

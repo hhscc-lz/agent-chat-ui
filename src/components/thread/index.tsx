@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 import { ReactNode, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
 import { useState, FormEvent } from "react";
@@ -12,31 +11,21 @@ import {
   DO_NOT_RENDER_ID_PREFIX,
   ensureToolCallsHaveResponses,
 } from "@/lib/ensure-tool-responses";
-import { LangGraphLogoSVG } from "../icons/langgraph";
 import { TooltipIconButton } from "./tooltip-icon-button";
 import {
   ArrowDown,
   LoaderCircle,
-  PanelRightOpen,
-  PanelRightClose,
   SquarePen,
   XIcon,
   Plus,
+  PhoneCall,
+  Info,
 } from "lucide-react";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
-import ThreadHistory from "./history";
 import { toast } from "sonner";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
-import { GitHubSVG } from "../icons/github";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { ContentBlocksPreview } from "./ContentBlocksPreview";
 import {
@@ -82,32 +71,37 @@ function ScrollToBottom(props: { className?: string }) {
       onClick={() => scrollToBottom()}
     >
       <ArrowDown className="h-4 w-4" />
-      <span>Scroll to bottom</span>
+      <span>回到底部</span>
     </Button>
   );
 }
 
-function OpenGitHubRepo() {
+function HotlineBadge() {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <a
-            href="https://github.com/langchain-ai/agent-chat-ui"
-            target="_blank"
-            className="flex items-center justify-center"
-          >
-            <GitHubSVG
-              width="24"
-              height="24"
-            />
-          </a>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <p>Open GitHub repo</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs text-sky-700">
+      <PhoneCall className="h-3.5 w-3.5" />
+      <span>辽宁省12345政务服务热线（24小时）</span>
+      <span className="font-semibold text-sky-800">12345</span>
+    </div>
+  );
+}
+
+function IntroCard() {
+  return (
+    <div className="rounded-2xl border border-sky-100 bg-sky-50 p-6 text-slate-700 shadow-xs">
+      <div className="mb-4 flex items-center gap-2 text-sky-700">
+        <Info className="h-5 w-5" />
+        <h2 className="text-lg font-semibold">欢迎使用辽宁省12345政务服务热线</h2>
+      </div>
+      <p className="mb-3 leading-6">
+        请在这里提交您的诉求、投诉或建议。工作人员将按照“接诉即办”原则快速处理，并通过本窗口告知办理进度。
+      </p>
+      <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600">
+        <li>请写明事件经过、诉求诉点及涉及的单位或地点。</li>
+        <li>如需佐证，可上传相关图片或 PDF 材料，单条消息仅支持一次提交。</li>
+        <li>如需电话回访，请在对话中留下您的联系电话或其他联系方式。</li>
+      </ul>
+    </div>
   );
 }
 
@@ -116,10 +110,6 @@ export function Thread() {
   const [artifactOpen, closeArtifact] = useArtifactOpen();
 
   const [threadId, _setThreadId] = useQueryState("threadId");
-  const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
-    "chatHistoryOpen",
-    parseAsBoolean.withDefault(false),
-  );
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
     parseAsBoolean.withDefault(false),
@@ -136,7 +126,6 @@ export function Thread() {
     handlePaste,
   } = useFileUpload();
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
-  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
 
   const stream = useStreamContext();
   const messages = stream.messages;
@@ -166,10 +155,10 @@ export function Thread() {
 
       // Message is defined, and it has not been logged yet. Save it, and send the error
       lastError.current = message;
-      toast.error("An error occurred. Please try again.", {
+      toast.error("提交遇到问题，请稍后重试。", {
         description: (
           <p>
-            <strong>Error:</strong> <code>{message}</code>
+            <strong>错误详情：</strong> <code>{message}</code>
           </p>
         ),
         richColors: true,
@@ -256,136 +245,48 @@ export function Thread() {
   );
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="relative hidden lg:flex">
-        <motion.div
-          className="absolute z-20 h-full overflow-hidden border-r bg-white"
-          style={{ width: 300 }}
-          animate={
-            isLargeScreen
-              ? { x: chatHistoryOpen ? 0 : -300 }
-              : { x: chatHistoryOpen ? 0 : -300 }
-          }
-          initial={{ x: -300 }}
-          transition={
-            isLargeScreen
-              ? { type: "spring", stiffness: 300, damping: 30 }
-              : { duration: 0 }
-          }
-        >
-          <div
-            className="relative h-full"
-            style={{ width: 300 }}
-          >
-            <ThreadHistory />
-          </div>
-        </motion.div>
-      </div>
-
-      <div
-        className={cn(
-          "grid w-full grid-cols-[1fr_0fr] transition-all duration-500",
-          artifactOpen && "grid-cols-[3fr_2fr]",
-        )}
-      >
-        <motion.div
+    <div
+      className={cn(
+        "grid h-screen w-full overflow-hidden grid-cols-[1fr_0fr] transition-all duration-500",
+        artifactOpen && "grid-cols-[3fr_2fr]",
+      )}
+    >
+      <div className="flex min-w-0 flex-col overflow-hidden">
+        <div
           className={cn(
             "relative flex min-w-0 flex-1 flex-col overflow-hidden",
             !chatStarted && "grid-rows-[1fr]",
           )}
-          layout={isLargeScreen}
-          animate={{
-            marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-            width: chatHistoryOpen
-              ? isLargeScreen
-                ? "calc(100% - 300px)"
-                : "100%"
-              : "100%",
-          }}
-          transition={
-            isLargeScreen
-              ? { type: "spring", stiffness: 300, damping: 30 }
-              : { duration: 0 }
-          }
         >
-          {!chatStarted && (
-            <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
-              <div>
-                {(!chatHistoryOpen || !isLargeScreen) && (
-                  <Button
-                    className="hover:bg-gray-100"
-                    variant="ghost"
-                    onClick={() => setChatHistoryOpen((p) => !p)}
-                  >
-                    {chatHistoryOpen ? (
-                      <PanelRightOpen className="size-5" />
-                    ) : (
-                      <PanelRightClose className="size-5" />
-                    )}
-                  </Button>
-                )}
-              </div>
-              <div className="absolute top-2 right-4 flex items-center">
-                <OpenGitHubRepo />
-              </div>
+          {!chatStarted ? (
+            <div className="absolute top-0 right-4 z-10 flex items-center gap-3 p-3">
+              <HotlineBadge />
             </div>
-          )}
-          {chatStarted && (
-            <div className="relative z-10 flex items-center justify-between gap-3 p-2">
-              <div className="relative flex items-center justify-start gap-2">
-                <div className="absolute left-0 z-10">
-                  {(!chatHistoryOpen || !isLargeScreen) && (
-                    <Button
-                      className="hover:bg-gray-100"
-                      variant="ghost"
-                      onClick={() => setChatHistoryOpen((p) => !p)}
-                    >
-                      {chatHistoryOpen ? (
-                        <PanelRightOpen className="size-5" />
-                      ) : (
-                        <PanelRightClose className="size-5" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <motion.button
-                  className="flex cursor-pointer items-center gap-2"
-                  onClick={() => setThreadId(null)}
-                  animate={{
-                    marginLeft: !chatHistoryOpen ? 48 : 0,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                >
-                  <LangGraphLogoSVG
-                    width={32}
-                    height={32}
-                  />
-                  <span className="text-xl font-semibold tracking-tight">
-                    Agent Chat
-                  </span>
-                </motion.button>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="flex items-center">
-                  <OpenGitHubRepo />
-                </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 border-b bg-white/80 p-3 shadow-sm backdrop-blur-sm">
+              <button
+                className="flex cursor-pointer flex-col text-left"
+                onClick={() => setThreadId(null)}
+              >
+                <span className="text-sm font-medium text-sky-700">
+                  辽宁省12345
+                </span>
+                <span className="text-xl font-semibold tracking-tight text-slate-900">
+                  政务服务热线
+                </span>
+              </button>
+              <div className="flex items-center gap-3">
+                <HotlineBadge />
                 <TooltipIconButton
                   size="lg"
                   className="p-4"
-                  tooltip="New thread"
+                  tooltip="新建诉求"
                   variant="ghost"
                   onClick={() => setThreadId(null)}
                 >
                   <SquarePen className="size-5" />
                 </TooltipIconButton>
               </div>
-
-              <div className="from-background to-background/0 absolute inset-x-0 top-full h-5 bg-gradient-to-b" />
             </div>
           )}
 
@@ -417,8 +318,6 @@ export function Thread() {
                         />
                       ),
                     )}
-                  {/* Special rendering case where there are no AI/tool messages, but there is an interrupt.
-                    We need to render it outside of the messages list, since there are no messages to render */}
                   {hasNoAIOrToolMessages && !!stream.interrupt && (
                     <AssistantMessage
                       key="interrupt-msg"
@@ -430,16 +329,21 @@ export function Thread() {
                   {isLoading && !firstTokenReceived && (
                     <AssistantMessageLoading />
                   )}
+                  {!chatStarted && <IntroCard />}
                 </>
               }
               footer={
                 <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-white">
                   {!chatStarted && (
                     <div className="flex items-center gap-3">
-                      <LangGraphLogoSVG className="h-8 flex-shrink-0" />
-                      <h1 className="text-2xl font-semibold tracking-tight">
-                        Agent Chat
-                      </h1>
+                      <div className="flex flex-col items-start">
+                        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                          辽宁省12345政务服务热线
+                        </h1>
+                        <p className="text-sm text-slate-500">
+                          诉求在线提交 · 进度随时查询 · 满意度回访
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -479,7 +383,7 @@ export function Thread() {
                             form?.requestSubmit();
                           }
                         }}
-                        placeholder="Type your message..."
+                        placeholder="请详细描述您的诉求或投诉内容，包括时间、地点、涉及单位及您的期望处理方式……"
                         className="field-sizing-content resize-none border-none bg-transparent p-3.5 pb-0 shadow-none ring-0 outline-none focus:ring-0 focus:outline-none"
                       />
 
@@ -495,7 +399,7 @@ export function Thread() {
                               htmlFor="render-tool-calls"
                               className="text-sm text-gray-600"
                             >
-                              Hide Tool Calls
+                              隐藏办理日志
                             </Label>
                           </div>
                         </div>
@@ -505,7 +409,7 @@ export function Thread() {
                         >
                           <Plus className="size-5 text-gray-600" />
                           <span className="text-sm text-gray-600">
-                            Upload PDF or Image
+                            上传佐证材料（图片/PDF）
                           </span>
                         </Label>
                         <input
@@ -523,7 +427,7 @@ export function Thread() {
                             className="ml-auto"
                           >
                             <LoaderCircle className="h-4 w-4 animate-spin" />
-                            Cancel
+                            停止
                           </Button>
                         ) : (
                           <Button
@@ -534,7 +438,7 @@ export function Thread() {
                               (!input.trim() && contentBlocks.length === 0)
                             }
                           >
-                            Send
+                            提交诉求
                           </Button>
                         )}
                       </div>
@@ -544,20 +448,21 @@ export function Thread() {
               }
             />
           </StickToBottom>
-        </motion.div>
-        <div className="relative flex flex-col border-l">
-          <div className="absolute inset-0 flex min-w-[30vw] flex-col">
-            <div className="grid grid-cols-[1fr_auto] border-b p-4">
-              <ArtifactTitle className="truncate overflow-hidden" />
-              <button
-                onClick={closeArtifact}
-                className="cursor-pointer"
-              >
-                <XIcon className="size-5" />
-              </button>
-            </div>
-            <ArtifactContent className="relative flex-grow" />
+        </div>
+      </div>
+
+      <div className="relative flex flex-col border-l">
+        <div className="absolute inset-0 flex min-w-[30vw] flex-col">
+          <div className="grid grid-cols-[1fr_auto] border-b p-4">
+            <ArtifactTitle className="truncate overflow-hidden" />
+            <button
+              onClick={closeArtifact}
+              className="cursor-pointer"
+            >
+              <XIcon className="size-5" aria-label="关闭侧栏" />
+            </button>
           </div>
+          <ArtifactContent className="relative flex-grow" />
         </div>
       </div>
     </div>
