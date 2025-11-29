@@ -15,17 +15,14 @@ import {
   type RemoveUIMessage,
 } from "@langchain/langgraph-sdk/react-ui";
 import { useQueryState } from "nuqs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { LangGraphLogoSVG } from "@/components/icons/langgraph";
-import { Label } from "@/components/ui/label";
-import { ArrowRight } from "lucide-react";
-import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
-import { useThreads } from "./Thread";
 import { toast } from "sonner";
 
-export type StateType = { messages: Message[]; ui?: UIMessage[] };
+export type StateType = {
+  messages: Message[];
+  ui?: UIMessage[];
+  task_reports?: string[]; // 子智能体报告列表
+};
 
 const useTypedStream = useStream<
   StateType,
@@ -41,10 +38,6 @@ const useTypedStream = useStream<
 
 type StreamContextType = ReturnType<typeof useTypedStream>;
 const StreamContext = createContext<StreamContextType | undefined>(undefined);
-
-async function sleep(ms = 4000) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function checkGraphStatus(
   apiUrl: string,
@@ -77,14 +70,12 @@ const StreamSession = ({
   apiUrl: string;
   assistantId: string;
 }) => {
-  const [threadId, setThreadId] = useQueryState("threadId");
-  const { getThreads, setThreads } = useThreads();
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
     assistantId,
-    threadId: threadId ?? null,
-    fetchStateHistory: true,
+    threadId: null, // 每次都是新会话
+    fetchStateHistory: false, // 不需要获取历史
     onCustomEvent: (event, options) => {
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
         options.mutate((prev) => {
@@ -92,12 +83,6 @@ const StreamSession = ({
           return { ...prev, ui };
         });
       }
-    },
-    onThreadId: (id) => {
-      setThreadId(id);
-      // Refetch threads list when thread ID changes.
-      // Wait for some seconds before fetching so we're able to get the new thread that was created.
-      sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
 
