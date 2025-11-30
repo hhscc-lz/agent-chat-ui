@@ -87,21 +87,21 @@ const StreamSession = ({
   });
 
   useEffect(() => {
-    checkGraphStatus(apiUrl, apiKey).then((ok) => {
-      if (!ok) {
-        toast.error("Failed to connect to LangGraph server", {
-          description: () => (
-            <p>
-              Please ensure your graph is running at <code>{apiUrl}</code> and
-              your API key is correctly set (if connecting to a deployed graph).
-            </p>
-          ),
-          duration: 10000,
-          richColors: true,
-          closeButton: true,
-        });
-      }
-    });
+    // checkGraphStatus(apiUrl, apiKey).then((ok) => {
+    //   if (!ok) {
+    //     toast.error("Failed to connect to LangGraph server", {
+    //       description: () => (
+    //         <p>
+    //           Please ensure your graph is running at <code>{apiUrl}</code> and
+    //           your API key is correctly set (if connecting to a deployed graph).
+    //         </p>
+    //       ),
+    //       duration: 10000,
+    //       richColors: true,
+    //       closeButton: true,
+    //     });
+    //   }
+    // });
   }, [apiKey, apiUrl]);
 
   return (
