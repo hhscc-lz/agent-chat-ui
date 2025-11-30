@@ -85,6 +85,7 @@ export function Thread() {
     "hideToolCalls",
     parseAsBoolean.withDefault(false),
   );
+  const [smartQueryEnabled, setSmartQueryEnabled] = useState(false);
   const [input, setInput] = useState("");
   const {
     contentBlocks,
@@ -307,7 +308,7 @@ export function Thread() {
                     <div className="flex items-center gap-3">
                       <LangGraphLogoSVG className="h-8 flex-shrink-0" />
                       <h1 className="text-2xl font-semibold tracking-tight">
-                        长春市12345社情民意决策分析平台
+                        长春市12345社情民意决策智能体
                       </h1>
                     </div>
                   )}
@@ -353,7 +354,7 @@ export function Thread() {
                       />
 
                       <div className="flex items-center gap-6 p-2 pt-4">
-                        <div>
+                        {/* <div>
                           <div className="flex items-center space-x-2">
                             <Switch
                               id="render-tool-calls"
@@ -365,6 +366,21 @@ export function Thread() {
                               className="text-sm text-gray-600"
                             >
                               隐藏工具调用
+                            </Label>
+                          </div>
+                        </div> */}
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="smart-query-switch"
+                              checked={smartQueryEnabled}
+                              onCheckedChange={setSmartQueryEnabled}
+                            />
+                            <Label
+                              htmlFor="smart-query-switch"
+                              className="text-sm text-gray-600"
+                            >
+                              智能问数
                             </Label>
                           </div>
                         </div>
@@ -387,7 +403,7 @@ export function Thread() {
                               (!input.trim() && contentBlocks.length === 0)
                             }
                           >
-                            Send
+                            发送
                           </Button>
                         )}
                       </div>
