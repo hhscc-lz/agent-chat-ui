@@ -304,14 +304,46 @@ export function AssistantMessage({
   );
 }
 
-export function AssistantMessageLoading() {
+export function AssistantMessageLoading({
+  progressMessages = []
+}: {
+  progressMessages?: string[]
+}) {
+  // 获取最新的进度消息
+  const latestMessage = progressMessages[progressMessages.length - 1];
+  // 获取最近3条历史消息（已完成的步骤）
+  const recentHistory = progressMessages.slice(-4, -1);
+
   return (
-    <div className="mr-auto flex items-start gap-2">
-      <div className="bg-muted flex h-8 items-center gap-1 rounded-2xl px-4 py-2">
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full"></div>
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_0.5s_infinite] rounded-full"></div>
-        <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_1s_infinite] rounded-full"></div>
+    <div className="mr-auto flex flex-col gap-2 max-w-2xl">
+      {/* 当前进度 - 脉冲动画 + 最新消息 */}
+      <div className="flex items-start gap-2">
+        <div className="bg-muted flex h-8 items-center gap-1 rounded-2xl px-4 py-2">
+          {/* 三个脉冲点 */}
+          <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full"></div>
+          <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_0.5s_infinite] rounded-full"></div>
+          <div className="bg-foreground/50 h-1.5 w-1.5 animate-[pulse_1.5s_ease-in-out_1s_infinite] rounded-full"></div>
+
+          {/* 最新进度消息 */}
+          {latestMessage && (
+            <span className="ml-2 text-sm text-muted-foreground">
+              {latestMessage}
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* 历史进度 - 已完成的步骤（带✓标记） */}
+      {recentHistory.length > 0 && (
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground/60 pl-2">
+          {recentHistory.map((msg, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <span className="text-green-500">✓</span>
+              <span>{msg}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

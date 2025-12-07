@@ -22,6 +22,7 @@ export type StateType = {
   messages: Message[];
   ui?: UIMessage[];
   task_reports?: Message[]; // 子智能体报告列表（后端 add_messages 自动转换为 Message 对象）
+  progress_messages?: string[]; // 后端 writer 发送的进度消息列表
 };
 
 const useTypedStream = useStream<
@@ -31,8 +32,9 @@ const useTypedStream = useStream<
       messages?: Message[] | Message | string;
       ui?: (UIMessage | RemoveUIMessage)[] | UIMessage | RemoveUIMessage;
       context?: Record<string, unknown>;
+      progress_messages?: string[];
     };
-    CustomEventType: UIMessage | RemoveUIMessage;
+    CustomEventType: UIMessage | RemoveUIMessage | string; // 添加 string 类型支持进度消息
   }
 >;
 
@@ -88,10 +90,18 @@ const StreamSession = ({
     threadId: null, // 每次都是新会话
     fetchStateHistory: false, // 不需要获取历史
     onCustomEvent: (event, options) => {
+      // 处理 UI 消息
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
         options.mutate((prev) => {
           const ui = uiMessageReducer(prev.ui ?? [], event);
           return { ...prev, ui };
+        });
+      }
+      // 处理进度消息（后端 writer 发送的字符串）
+      else if (typeof event === 'string') {
+        options.mutate((prev) => {
+          const newMessages = [...(prev.progress_messages ?? []), event];
+          return { ...prev, progress_messages: newMessages };
         });
       }
     },

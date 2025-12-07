@@ -107,6 +107,7 @@ export function Thread({
   const messages = stream.messages;
   const isLoading = stream.isLoading;
   const taskReports = stream.values?.task_reports || [];
+  const progressMessages = stream.values?.progress_messages || []; // 获取进度消息
 
   // 判断是否已经开始对话（至少有一条消息）
   const hasStartedChat = messages.length > 0;
@@ -189,7 +190,7 @@ export function Thread({
     stream.submit(
       { messages: [...toolMessages, newHumanMessage], context },
       {
-        streamMode: ["values"],
+        streamMode: ["values", "custom"], // 添加 "custom" 模式接收进度消息
         streamSubgraphs: true,
         streamResumable: true,
         optimisticValues: (prev) => ({
@@ -200,6 +201,7 @@ export function Thread({
             ...toolMessages,
             newHumanMessage,
           ],
+          progress_messages: [], // 重置进度消息
         }),
       },
     );
@@ -315,7 +317,7 @@ export function Thread({
                   )}
                   {/* 持续显示加载动画直到最终报告出现 */}
                   {shouldShowLoading && (
-                    <AssistantMessageLoading />
+                    <AssistantMessageLoading progressMessages={progressMessages} />
                   )}
                   {/* 子智能体报告已集成到最终 AI 消息中 */}
                 </>
