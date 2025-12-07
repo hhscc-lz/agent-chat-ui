@@ -77,7 +77,13 @@ function OpenGitHubRepo() {
   return null;
 }
 
-export function Thread() {
+export function Thread({
+  smartQueryEnabled,
+  onSmartQueryChange,
+}: {
+  smartQueryEnabled: boolean;
+  onSmartQueryChange: (enabled: boolean) => void;
+}) {
   const [artifactContext, setArtifactContext] = useArtifactContext();
   const [artifactOpen, closeArtifact] = useArtifactOpen();
 
@@ -85,7 +91,6 @@ export function Thread() {
     "hideToolCalls",
     parseAsBoolean.withDefault(false),
   );
-  const [smartQueryEnabled, setSmartQueryEnabled] = useState(false);
   const [input, setInput] = useState("");
   const {
     contentBlocks,
@@ -374,13 +379,13 @@ export function Thread() {
                             <Switch
                               id="smart-query-switch"
                               checked={smartQueryEnabled}
-                              onCheckedChange={setSmartQueryEnabled}
+                              onCheckedChange={onSmartQueryChange}
                             />
                             <Label
                               htmlFor="smart-query-switch"
                               className="text-sm text-gray-600"
                             >
-                              智能问数
+                              智能问数 {smartQueryEnabled ? "(快速问答)" : "(深度分析)"}
                             </Label>
                           </div>
                         </div>

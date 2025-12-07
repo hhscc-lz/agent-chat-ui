@@ -64,16 +64,27 @@ const StreamSession = ({
   apiKey,
   apiUrl,
   assistantId,
+  onAssistantIdChange,
 }: {
   children: ReactNode;
   apiKey: string | null;
   apiUrl: string;
   assistantId: string;
+  onAssistantIdChange?: (newAssistantId: string) => void;
 }) => {
+  const [currentAssistantId, setCurrentAssistantId] = useState(assistantId);
+
+  // 同步外部 assistantId 变化
+  useEffect(() => {
+    if (assistantId !== currentAssistantId) {
+      setCurrentAssistantId(assistantId);
+    }
+  }, [assistantId]);
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
-    assistantId,
+    assistantId: currentAssistantId,
     threadId: null, // 每次都是新会话
     fetchStateHistory: false, // 不需要获取历史
     onCustomEvent: (event, options) => {
@@ -115,8 +126,12 @@ const StreamSession = ({
 const DEFAULT_API_URL = "http://localhost:2024";
 const DEFAULT_ASSISTANT_ID = "agent";
 
-export const StreamProvider: React.FC<{ children: ReactNode }> = ({
+export const StreamProvider: React.FC<{
+  children: ReactNode;
+  overrideAssistantId?: string;
+}> = ({
   children,
+  overrideAssistantId,
 }) => {
   // Get environment variables
   const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
@@ -137,11 +152,14 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
     return storedKey || "";
   });
 
+  // Use overrideAssistantId if provided, otherwise use assistantId from URL/env
+  const finalAssistantId = overrideAssistantId || assistantId;
+
   return (
     <StreamSession
       apiKey={apiKey}
       apiUrl={apiUrl}
-      assistantId={assistantId}
+      assistantId={finalAssistantId}
     >
       {children}
     </StreamSession>
