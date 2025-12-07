@@ -20,7 +20,6 @@ import {
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { toast } from "sonner";
-import { SubAgentReportsTabs } from "./SubAgentReportsTabs";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
 import { useFileUpload } from "@/hooks/use-file-upload";
@@ -89,7 +88,7 @@ export function Thread({
 
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(true),
   );
   const [input, setInput] = useState("");
   const {
@@ -108,6 +107,20 @@ export function Thread({
   const messages = stream.messages;
   const isLoading = stream.isLoading;
   const taskReports = stream.values?.task_reports || [];
+
+  // 判断是否已经开始对话（至少有一条消息）
+  const hasStartedChat = messages.length > 0;
+
+  // 判断最后一条消息是否为最终报告
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageIsFinal =
+    lastMessage?.type === "ai" &&
+    !("tool_calls" in lastMessage && lastMessage.tool_calls && lastMessage.tool_calls.length > 0);
+
+  // 显示加载动画的条件：
+  // 1. 已开始对话
+  // 2. 正在加载 或 最后一条消息不是最终报告
+  const shouldShowLoading = hasStartedChat && (isLoading || !lastMessageIsFinal);
 
   const lastError = useRef<string | undefined>(undefined);
 
@@ -285,6 +298,7 @@ export function Thread({
                           message={message}
                           isLoading={isLoading}
                           handleRegenerate={handleRegenerate}
+                          taskReports={taskReports}
                         />
                       ),
                     )}
@@ -296,15 +310,14 @@ export function Thread({
                       message={undefined}
                       isLoading={isLoading}
                       handleRegenerate={handleRegenerate}
+                      taskReports={taskReports}
                     />
                   )}
-                  {isLoading && !firstTokenReceived && (
+                  {/* 持续显示加载动画直到最终报告出现 */}
+                  {shouldShowLoading && (
                     <AssistantMessageLoading />
                   )}
-                  {/* 子智能体报告标签 - 显示在最终报告下方 */}
-                  {!isLoading && taskReports.length > 0 && (
-                    <SubAgentReportsTabs reports={taskReports} />
-                  )}
+                  {/* 子智能体报告已集成到最终 AI 消息中 */}
                 </>
               }
               footer={

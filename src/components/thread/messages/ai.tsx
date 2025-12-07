@@ -8,12 +8,16 @@ import { LoadExternalComponent } from "@langchain/langgraph-sdk/react-ui";
 import { cn } from "@/lib/utils";
 import { ToolCalls, ToolResult } from "./tool-calls";
 import { MessageContentComplex } from "@langchain/core/messages";
-import { Fragment } from "react/jsx-runtime";
+import { Fragment, useState } from "react";
 import { isAgentInboxInterruptSchema } from "@/lib/agent-inbox-interrupt";
 import { ThreadView } from "../agent-inbox";
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { GenericInterruptView } from "./generic-interrupt";
 import { useArtifact } from "../artifact";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 function CustomComponent({
   message,
@@ -102,16 +106,26 @@ export function AssistantMessage({
   message,
   isLoading,
   handleRegenerate,
+  taskReports = [],
 }: {
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
+  taskReports?: Message[]; // 改为 Message[]
 }) {
+  const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null);
+
+  // 提取报告文本内容
+  const getReportText = (report: Message | string): string => {
+    if (typeof report === 'string') return report;
+    return getContentString(report.content);
+  };
+
   const content = message?.content ?? [];
   const contentString = getContentString(content);
   const [hideToolCalls] = useQueryState(
     "hideToolCalls",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(true),
   );
 
   const thread = useStreamContext();
@@ -141,7 +155,32 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
+  // 判断是否为最终报告（没有工具调用的最后一条 AI 消息）
+  // 去掉 taskReports.length > 0 的限制，因为可能没有子报告也是最终报告
+  const isFinalReport =
+    isLastMessage &&
+    !hasToolCalls &&
+    !isLoading;
+
+  // 简化隐藏逻辑：只显示最终报告，隐藏所有其他 AI 消息
+  // 去掉 !isLoading 条件，无论加载状态如何都隐藏中间消息
+  const shouldHideMessage = !isFinalReport && !isToolResult;
+
+  // 复制报告内容
+  const handleCopy = async () => {
+    if (activeReportIndex !== null) {
+      const reportText = getReportText(taskReports[activeReportIndex]);
+      await navigator.clipboard.writeText(reportText);
+      toast.success("报告已复制到剪贴板");
+    }
+  };
+
   if (isToolResult && hideToolCalls) {
+    return null;
+  }
+
+  // 隐藏所有非最终报告的 AI 消息
+  if (shouldHideMessage) {
     return null;
   }
 
@@ -209,9 +248,58 @@ export function AssistantMessage({
                 handleRegenerate={() => handleRegenerate(parentCheckpoint)}
               />
             </div>
+
+            {/* 子智能体报告按钮 */}
+            {isFinalReport && (
+              <div className="mt-4 border-t pt-4">
+                <div className="text-sm text-gray-600 mb-2">
+                  子智能体分析报告：
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {taskReports.map((_, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setActiveReportIndex(index)}
+                    >
+                      子智能体 {index + 1}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
+
+      {/* Sheet 弹窗显示报告内容 - 始终渲染但根据状态控制显示 */}
+      <Sheet
+        open={activeReportIndex !== null && isFinalReport}
+        onOpenChange={(open) => !open && setActiveReportIndex(null)}
+      >
+        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>子智能体报告 {(activeReportIndex ?? 0) + 1}</SheetTitle>
+          </SheetHeader>
+          <div className="prose prose-sm max-w-none dark:prose-invert mt-4">
+            {activeReportIndex !== null && taskReports[activeReportIndex] && (
+              <MarkdownText>
+                {getReportText(taskReports[activeReportIndex])}
+              </MarkdownText>
+            )}
+          </div>
+          <SheetFooter>
+            <Button variant="outline" onClick={handleCopy}>
+              <Copy className="w-4 h-4 mr-2" />
+              复制
+            </Button>
+            <Button onClick={() => setActiveReportIndex(null)}>
+              关闭
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

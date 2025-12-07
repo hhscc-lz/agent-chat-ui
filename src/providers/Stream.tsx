@@ -21,7 +21,7 @@ import { toast } from "sonner";
 export type StateType = {
   messages: Message[];
   ui?: UIMessage[];
-  task_reports?: string[]; // 子智能体报告列表
+  task_reports?: Message[]; // 子智能体报告列表（后端 add_messages 自动转换为 Message 对象）
 };
 
 const useTypedStream = useStream<
