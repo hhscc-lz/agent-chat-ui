@@ -107,11 +107,13 @@ export function AssistantMessage({
   isLoading,
   handleRegenerate,
   taskReports = [],
+  smartQueryEnabled = false,
 }: {
   message: Message | undefined;
   isLoading: boolean;
   handleRegenerate: (parentCheckpoint: Checkpoint | null | undefined) => void;
   taskReports?: Message[]; // 改为 Message[]
+  smartQueryEnabled?: boolean;
 }) {
   const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null);
 
@@ -249,8 +251,8 @@ export function AssistantMessage({
               />
             </div>
 
-            {/* 子智能体报告按钮 */}
-            {isFinalReport && (
+            {/* 子智能体报告按钮 - 仅在智能体分析模式下显示 */}
+            {isFinalReport && smartQueryEnabled && taskReports.length > 0 && (
               <div className="mt-4 border-t pt-4">
                 <div className="text-sm text-gray-600 mb-2">
                   子智能体分析报告：

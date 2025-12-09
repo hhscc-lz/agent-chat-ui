@@ -301,6 +301,7 @@ export function Thread({
                           isLoading={isLoading}
                           handleRegenerate={handleRegenerate}
                           taskReports={taskReports}
+                          smartQueryEnabled={smartQueryEnabled}
                         />
                       ),
                     )}
@@ -400,7 +401,7 @@ export function Thread({
                               htmlFor="smart-query-switch"
                               className="text-sm text-gray-600"
                             >
-                              智能问数 {smartQueryEnabled ? "(快速问答)" : "(深度分析)"}
+                              {smartQueryEnabled ? "智能体分析" : "智能问数"}
                             </Label>
                           </div>
                         </div>
