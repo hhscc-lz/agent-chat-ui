@@ -15,10 +15,22 @@ set -e  # 遇到错误立即退出
 IMAGE_NAME="agent-chat-ui"
 VERSION="v0.0.1"
 CONTAINER_NAME="agent-chat-ui"
-PORT="8884"
+PORT="8893"
 
-# 镜像文件路径（可通过参数指定）
-IMAGE_FILE="${1:-agent-chat-ui-latest.tar.gz}"
+# 镜像文件路径（可通过参数指定，默认查找最新的 tar.gz）
+if [ -n "$1" ]; then
+    IMAGE_FILE="$1"
+else
+    # 自动查找最新的 tar.gz 文件
+    IMAGE_FILE=$(ls -t agent-chat-ui-*.tar.gz 2>/dev/null | head -n 1)
+    if [ -z "$IMAGE_FILE" ]; then
+        echo "❌ 错误: 未找到 agent-chat-ui-*.tar.gz 文件"
+        echo "请确保镜像文件存在，或手动指定路径："
+        echo "  ./deploy-server.sh /path/to/agent-chat-ui-v0.0.1.tar.gz"
+        exit 1
+    fi
+    echo "🔍 自动检测到最新镜像: $IMAGE_FILE"
+fi
 
 echo "============================================"
 echo "Agent Chat UI 服务器部署脚本"
@@ -108,48 +120,10 @@ docker images | grep "$IMAGE_NAME" || {
 }
 
 # ============================================
-# 检查环境变量文件
-# ============================================
-echo ""
-echo "5. 检查环境配置..."
-
-if [ ! -f ".env.production" ]; then
-    echo "⚠️  警告: 未找到 .env.production 文件"
-    echo "正在创建默认配置..."
-
-    cat > .env.production <<EOF
-# LangGraph API 配置
-NEXT_PUBLIC_API_URL=http://localhost:2024
-NEXT_PUBLIC_ASSISTANT_ID=analysis-agent
-
-# LangSmith API Key（请修改为实际值）
-LANGSMITH_API_KEY=lsv2_pt_your_api_key_here
-
-# Node.js 配置
-NODE_ENV=production
-PORT=3000
-EOF
-
-    echo "✅ 已创建默认配置文件: .env.production"
-    echo "⚠️  请修改 .env.production 中的配置后再启动容器！"
-    echo ""
-    read -p "是否现在编辑配置文件？[y/N] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        ${EDITOR:-vi} .env.production
-    else
-        echo "请手动编辑配置文件后运行启动命令"
-        exit 0
-    fi
-else
-    echo "✅ 找到配置文件: .env.production"
-fi
-
-# ============================================
 # 停止并删除旧容器
 # ============================================
 echo ""
-echo "6. 清理旧容器..."
+echo "5. 清理旧容器..."
 
 if docker ps -a | grep -q "$CONTAINER_NAME"; then
     echo "发现旧容器，正在停止并删除..."
@@ -164,13 +138,12 @@ fi
 # 启动容器
 # ============================================
 echo ""
-echo "7. 启动容器..."
+echo "6. 启动容器..."
 
 docker run -d \
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -p "$PORT:3000" \
-    --env-file .env.production \
     "$IMAGE_NAME:$VERSION"
 
 echo "✅ 容器已启动"
@@ -179,7 +152,7 @@ echo "✅ 容器已启动"
 # 等待服务就绪
 # ============================================
 echo ""
-echo "8. 等待服务启动..."
+echo "7. 等待服务启动..."
 sleep 5
 
 # 检查容器状态
@@ -196,7 +169,7 @@ fi
 # 健康检查
 # ============================================
 echo ""
-echo "9. 健康检查..."
+echo "8. 健康检查..."
 
 # 尝试访问服务
 MAX_RETRIES=10

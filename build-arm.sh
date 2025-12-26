@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # ============================================
-# Docker ARM64 镜像构建脚本
-# 用途：在 Mac 上构建适用于 Linux ARM 服务器的镜像
-# 作者：Claude Code
+# Docker ARM64 镜像构建与导出脚本
+# 用途：在 Mac 上构建适用于 Linux ARM 服务器的镜像并导出
+# 使用：./build-arm.sh [版本号]
 # ============================================
 
 set -e  # 遇到错误立即退出
@@ -12,41 +12,44 @@ set -e  # 遇到错误立即退出
 # 配置变量
 # ============================================
 IMAGE_NAME="agent-chat-ui"
-VERSION="${1:-latest}"  # 默认版本 latest，可通过参数指定
+VERSION="${1:-v0.0.1}"  # 默认版本 v0.0.1，可通过参数指定
 PLATFORM="linux/arm64"
+OUTPUT_DIR="./docker-images"
+TAR_FILE="$OUTPUT_DIR/$IMAGE_NAME-$VERSION.tar"
+GZ_FILE="$TAR_FILE.gz"
 
 echo "============================================"
-echo "开始构建 Docker 镜像"
-echo "镜像名称: $IMAGE_NAME"
-echo "版本标签: $VERSION"
+echo "Docker 镜像构建与导出"
+echo "============================================"
+echo "镜像名称: $IMAGE_NAME:$VERSION"
 echo "目标平台: $PLATFORM"
+echo "导出目录: $OUTPUT_DIR"
 echo "============================================"
 
 # ============================================
-# 检查 Docker 是否安装
+# 1. 检查 Docker 环境
 # ============================================
+echo ""
+echo "1. 检查 Docker 环境..."
+
 if ! command -v docker &> /dev/null; then
     echo "❌ 错误: 未找到 Docker，请先安装 Docker Desktop"
     exit 1
 fi
-
 echo "✅ Docker 已安装: $(docker --version)"
 
-# ============================================
-# 检查并设置 Docker Buildx
-# ============================================
-echo ""
-echo "检查 Docker Buildx..."
-
-# 检查 buildx 是否可用
 if ! docker buildx version &> /dev/null; then
     echo "❌ 错误: Docker Buildx 不可用，请更新 Docker Desktop"
     exit 1
 fi
+echo "✅ Docker Buildx 已安装"
 
-echo "✅ Docker Buildx 已安装: $(docker buildx version)"
+# ============================================
+# 2. 设置 Buildx Builder
+# ============================================
+echo ""
+echo "2. 设置 Buildx Builder..."
 
-# 创建并使用 buildx builder（如果不存在）
 if ! docker buildx inspect arm-builder &> /dev/null; then
     echo "创建 buildx builder: arm-builder"
     docker buildx create --name arm-builder --use --platform $PLATFORM
@@ -56,69 +59,86 @@ else
 fi
 
 # ============================================
-# 构建镜像
+# 3. 构建镜像
 # ============================================
 echo ""
-echo "开始构建镜像..."
+echo "3. 构建镜像..."
 echo "⏳ 这可能需要 5-10 分钟，请耐心等待..."
 
 docker buildx build \
     --platform $PLATFORM \
     --tag $IMAGE_NAME:$VERSION \
-    --tag $IMAGE_NAME:latest \
     --load \
     --progress=plain \
     .
 
-# ============================================
 # 验证镜像
-# ============================================
-echo ""
-echo "============================================"
-echo "构建完成！验证镜像信息..."
-echo "============================================"
-
-# 检查镜像是否存在
 if docker images | grep -q "$IMAGE_NAME"; then
-    echo "✅ 镜像已创建:"
+    echo "✅ 镜像构建成功"
     docker images | grep "$IMAGE_NAME" | head -n 2
 else
     echo "❌ 错误: 镜像创建失败"
     exit 1
 fi
 
-# 验证镜像架构
-echo ""
-echo "验证镜像架构..."
+# 验证架构
 ARCH=$(docker inspect $IMAGE_NAME:$VERSION | grep -A 5 '"Architecture"' | grep '"Architecture"' | awk '{print $2}' | tr -d '",')
-echo "镜像架构: $ARCH"
-
 if [ "$ARCH" = "arm64" ]; then
-    echo "✅ 架构验证通过！"
+    echo "✅ 架构验证通过: $ARCH"
 else
     echo "⚠️  警告: 镜像架构为 $ARCH，不是预期的 arm64"
 fi
 
-# 显示镜像详细信息
+# ============================================
+# 4. 导出镜像
+# ============================================
 echo ""
-echo "镜像详细信息:"
-docker inspect $IMAGE_NAME:$VERSION | grep -E '"Architecture"|"Os"|"Size"' | head -n 3
+echo "4. 导出镜像为 tar.gz..."
+
+mkdir -p "$OUTPUT_DIR"
+
+# 删除旧文件
+[ -f "$TAR_FILE" ] && rm -f "$TAR_FILE"
+[ -f "$GZ_FILE" ] && rm -f "$GZ_FILE"
+
+echo "⏳ 导出中..."
+docker save -o "$TAR_FILE" "$IMAGE_NAME:$VERSION"
+
+echo "⏳ 压缩中..."
+gzip -f "$TAR_FILE"
+
+if [ -f "$GZ_FILE" ]; then
+    GZ_SIZE=$(du -h "$GZ_FILE" | cut -f1)
+    echo "✅ 导出成功: $GZ_FILE ($GZ_SIZE)"
+else
+    echo "❌ 错误: 导出失败"
+    exit 1
+fi
+
+# 生成 MD5
+if command -v md5sum &> /dev/null; then
+    md5sum "$GZ_FILE" > "$GZ_FILE.md5"
+elif command -v md5 &> /dev/null; then
+    md5 "$GZ_FILE" > "$GZ_FILE.md5"
+fi
 
 # ============================================
-# 下一步提示
+# 完成
 # ============================================
 echo ""
 echo "============================================"
-echo "🎉 镜像构建成功！"
+echo "🎉 构建并导出成功！"
 echo "============================================"
 echo ""
-echo "下一步操作："
-echo "1. 导出镜像为 tar 包:"
-echo "   ./scripts/export-image.sh $VERSION"
+echo "导出文件:"
+ls -lh "$OUTPUT_DIR" | grep "$VERSION"
 echo ""
-echo "2. 或直接测试镜像（仅限 Mac M1/M2）:"
-echo "   docker run -p 3000:3000 --env-file .env $IMAGE_NAME:$VERSION"
+echo "部署步骤:"
+echo "1. 上传到服务器:"
+echo "   scp $GZ_FILE deploy-server.sh user@server:/opt/"
 echo ""
-echo "3. 或使用 docker-compose 启动:"
-echo "   docker-compose up -d"
+echo "2. 服务器执行:"
+echo "   ./deploy-server.sh"
+echo ""
+echo "注意: .env 环境变量已打包到镜像中，无需单独上传"
 echo ""

@@ -44,6 +44,9 @@ RUN pnpm install --frozen-lockfile
 # 复制源代码
 COPY . .
 
+# 复制 .env 文件用于构建（NEXT_PUBLIC_* 变量需要在构建时确定）
+COPY .env .env
+
 # 设置环境变量（构建时）
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
@@ -74,6 +77,9 @@ COPY --from=builder /app/public ./public
 # Next.js standalone 模式会生成最小化的依赖
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# 复制 .env 文件到运行时（用于服务端环境变量）
+COPY --from=builder --chown=nextjs:nodejs /app/.env ./.env
 
 # 切换到非 root 用户
 USER nextjs
